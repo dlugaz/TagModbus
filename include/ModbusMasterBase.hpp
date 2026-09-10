@@ -35,8 +35,8 @@ namespace eModbus {
 
 		class Exception :public std::runtime_error {
 		public:
-			explicit Exception(const std::string &message)
-			:std::runtime_error(message){};
+			explicit Exception(const std::string_view message)
+			:std::runtime_error(message.data()){};
 		};
 		class ModbusException:public Exception{
 		public:

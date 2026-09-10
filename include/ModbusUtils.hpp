@@ -14,7 +14,7 @@ namespace eModbus {
         }
     }
 
-    inline std::string toString(const std::span<uint8_t> _dataBuffer) {
+    inline std::string toString(const std::span<const uint8_t> _dataBuffer) {
         std::string result;
         result.reserve(3 * _dataBuffer.size());
         for (const uint8_t byte: _dataBuffer) {
