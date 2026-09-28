@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.14)
-project(eModbusProject)
+project(TagModbusProject)
 set(CMAKE_CXX_STANDARD 20)
 
-add_library(eModbus
+add_library(TagModbus
         ./source/ModbusMasterBase.cpp
         )
 
-target_include_directories(eModbus PUBLIC include)
+target_include_directories(TagModbus PUBLIC include)
 option(COMPILE_TESTS "Enable Tests" OFF)
 if(COMPILE_TESTS)
         include(FetchContent)
@@ -17,19 +17,19 @@ if(COMPILE_TESTS)
         FetchContent_MakeAvailable(googletest)
 
         # 3. Create the test executable
-        add_executable(eModbus_tests
+        add_executable(TagModbus_tests
                 tests/test_FrameView.cpp
                 tests/test_Frame.cpp
         )
 
         # 4. Link library and GTest
-        target_link_libraries(eModbus_tests
+        target_link_libraries(TagModbus_tests
                 PRIVATE
-                eModbus
+                TagModbus
                 GTest::gtest_main
         )
 
         # 5. Enable test discovery for CLion
         include(GoogleTest)
-        gtest_discover_tests(eModbus_tests)
+        gtest_discover_tests(TagModbus_tests)
 endif ()
