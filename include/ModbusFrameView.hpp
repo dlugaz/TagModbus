@@ -6,7 +6,7 @@
 #define MODBUSFRAMEVIEW_HPP
 #include "ModbusUtils.hpp"
 
-namespace eModbus {
+namespace TagModbus {
 class FrameView {
     protected:
         std::span<uint8_t> _externalBufferSpan;
@@ -727,7 +727,7 @@ class FrameView {
         }
 
         std::string toString()  {
-            return eModbus::toString(_dataBuffer());
+            return TagModbus::toString(_dataBuffer());
         }
 
         static constexpr uint8_t MBAP_HEADER_SIZE = 7;

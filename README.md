@@ -1,6 +1,37 @@
-# eModbus
+# Tag Modbus 
+###### Modbus RTU and TCP library designed for the ease of usage and low resource footprint
 
-This is a WIP library to facilitate communication of devices via Modbus RTU and TCP protocols.
+The goal is to abstract all the protocol specific information so that the user needs to know bare minimum about it.
+
+Main concept it revolves around is **TAG** - instead of user manually interacting with modbus registers you create a
+definition of memory that is in modbus registers and the library does all the conversions for you.
+
+But also features powerful tools  to interact with raw byte buffers and interpret them as modbus frames - **zero copies**
+
+### Features:
+- **lightweight and multilayered** - user can choose at which level he wants to interact and how heavy he wants the library to be.
+- **extendable** - define your 
+- **Modbus RTU and TCP**
+- **System or device-agnostic** - implement your own IStreamDevice interface or choose from one implemented
+- **FrameView** - disect and debug frames peeking into raw byte buffers
+- **RegisterBuffer** - convert data in modbus registers into C++ custom types 
+- **MasterBase** - easily execute simple modbus master operations such as read, write registers
+- **MasterTag** - automatically read and convert data from modbus slave based on your tag definitions
+
+### Examples:
+
+#### MasterTag
+
+`#include "ModbusMasterTag.hpp"
+
+TagModbus::Tag myTag {
+
+
+}`
+
+
+
+
 
 ## Why?
 

@@ -32,7 +32,7 @@
  * A później można by to było łatwo przekształcić w polling?
  * Trzeba by było mieć jakiś cache. Te answery trzeba by było móc jakoś łączyć. Tylko jak?
  */
-namespace eModbus {
+namespace TagModbus {
 	struct Tag;
 
 	class MasterTag : public MasterBase {
@@ -291,7 +291,7 @@ namespace eModbus {
 				//Check if the distance between the first register in the request and this one is less then the maximum for requests
 				const uint16_t currentRegisterEnd = std::max(
 					distance + currentTag.register_length, static_cast<int>(currentRequest.quantity));
-				const bool registerOffsetLessThanMax = currentRegisterEnd <= eModbus::MAX_MODBUS_REGISTERS;
+				const bool registerOffsetLessThanMax = currentRegisterEnd <= TagModbus::MAX_MODBUS_REGISTERS;
 
 				//Check if registers are continuous (if they are not, then the modbus client can reject request)
 				const bool registersSpaceContinuous = true || checkRegistersContinuity(previousTagID, currentTagID);

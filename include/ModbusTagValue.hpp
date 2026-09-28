@@ -4,7 +4,7 @@
 #include "ModbusUtils.hpp"
 
 
-namespace eModbus {
+namespace TagModbus {
 	class TagValue {
 		std::vector<uint16_t> registers;
 

@@ -5,7 +5,7 @@
 #include <stdexcept> // For exceptions like std::out_of_range
 #include <algorithm> // For std::fill
 #include "config.hpp"
-namespace eModbus {
+namespace TagModbus {
     inline char nibbleToHexChar(const uint8_t nibble) {
         if (nibble < 10) {
             return '0' + nibble;

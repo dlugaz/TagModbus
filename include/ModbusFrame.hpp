@@ -15,11 +15,11 @@
 #include <cassert>
 #include "ModbusFrameView.hpp"
 
-namespace eModbus {
+namespace TagModbus {
 
 
 }
-namespace eModbus {
+namespace TagModbus {
     class Frame : public FrameView {
     static constexpr size_t MAX_MODBUS_FRAME_SIZE = 300;
     private:

@@ -12,7 +12,7 @@
 #include "ModbusTag.hpp"
 #include "ModbusUtils.hpp"
 
-namespace eModbus {
+namespace TagModbus {
 	class RegisterBufferView {
 
     public:
@@ -20,7 +20,7 @@ namespace eModbus {
         constexpr explicit RegisterBufferView(const uint16_t& startAddress, const RegisterType registerType,const std::span<RegistersValueType> container):
         startAddress_ {startAddress},buffer_{container}, registerType_{registerType}{}
 
-        template<typename T, eModbus::ByteOrder Order = eModbus::ByteOrder::MSB>
+        template<typename T, TagModbus::ByteOrder Order = TagModbus::ByteOrder::MSB>
         constexpr void put(const uint16_t modbus_address, const T& value) const{
             // The conversion function must be constexpr
             convertToRegisters<T, Order>(
@@ -28,7 +28,7 @@ namespace eModbus {
                 value
             );
         }
-        template<typename T, eModbus::ByteOrder Order = eModbus::ByteOrder::MSB>
+        template<typename T, TagModbus::ByteOrder Order = TagModbus::ByteOrder::MSB>
         constexpr void put(const Tag& tag, const T& value) const{
             // The conversion function must be constexpr
             convertToRegisters<T, Order>(
@@ -37,7 +37,7 @@ namespace eModbus {
             );
         }
 
-        template<typename T, eModbus::ByteOrder Order = eModbus::ByteOrder::MSB>
+        template<typename T, TagModbus::ByteOrder Order = TagModbus::ByteOrder::MSB>
         constexpr T get(const uint16_t modbus_address) const {
             // The conversion function must be constexpr
             return convertFromRegisters<T, Order>(
@@ -45,7 +45,7 @@ namespace eModbus {
             );
         }
 
-    	template<typename T, eModbus::ByteOrder Order = eModbus::ByteOrder::MSB>
+    	template<typename T, TagModbus::ByteOrder Order = TagModbus::ByteOrder::MSB>
 		constexpr T get(const Tag& tag) const {
         	return convertFromRegisters<T, Order>(get_buffer_for_address(tag.register_number,tag.register_length));
         }
@@ -124,17 +124,17 @@ namespace eModbus {
             return RegisterBufferView(startAddress_,registerType_, registersValue_);
         }
 
-        template<typename T, eModbus::ByteOrder Order = eModbus::ByteOrder::MSB>
+        template<typename T, TagModbus::ByteOrder Order = TagModbus::ByteOrder::MSB>
         constexpr void put(const uint16_t modbus_address, const T& value) {
             view().put<T, Order>(modbus_address, value);
         }
 
-        template<typename T, eModbus::ByteOrder Order = eModbus::ByteOrder::MSB>
+        template<typename T, TagModbus::ByteOrder Order = TagModbus::ByteOrder::MSB>
         constexpr T get(const uint16_t modbus_address){
             return view().get<T, Order>(modbus_address);
         }
 
-        template<typename T, eModbus::ByteOrder Order = eModbus::ByteOrder::MSB>
+        template<typename T, TagModbus::ByteOrder Order = TagModbus::ByteOrder::MSB>
         constexpr void get_into(uint16_t modbus_address, T &destination)
         {
             view().get_into<T, Order>(modbus_address,destination);

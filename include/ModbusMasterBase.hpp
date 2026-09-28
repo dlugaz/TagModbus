@@ -17,7 +17,7 @@
 #include "ModbusRegisterBuffer.hpp"
 #include "ModbusUtils.hpp"
 #include "config.hpp"
-namespace eModbus {
+namespace TagModbus {
 	class MasterBase{
 	protected:
 		explicit MasterBase(IStreamDevice& serial_device);
@@ -40,15 +40,15 @@ namespace eModbus {
 		};
 		class ModbusException:public Exception{
 		public:
-			eModbus::FrameView::ExceptionCode _exception_code;
-			explicit ModbusException(const eModbus::FrameView::ExceptionCode exception_code)
+			TagModbus::FrameView::ExceptionCode _exception_code;
+			explicit ModbusException(const TagModbus::FrameView::ExceptionCode exception_code)
 			:Exception("Modbus Exception Code "+ std::to_string(exception_code)),_exception_code(exception_code)
 			{};
 		};
 		class InvalidFrame:public Exception{
 		public:
-			eModbus::FrameView::ValidationStatus _validation_status;
-			explicit InvalidFrame(const eModbus::FrameView::ValidationStatus validation_status)
+			TagModbus::FrameView::ValidationStatus _validation_status;
+			explicit InvalidFrame(const TagModbus::FrameView::ValidationStatus validation_status)
 			:Exception("Validation Failed: "+to_string(validation_status)),
 			_validation_status(validation_status)
 			{};
@@ -64,24 +64,24 @@ namespace eModbus {
 		class ResponseTimeout:public Exception{
 
 		};
-		static eModbus::MasterBase TCP(IStreamDevice& serial_device);
+		static TagModbus::MasterBase TCP(IStreamDevice& serial_device);
 
-		static eModbus::MasterBase RTU(IStreamDevice& serial_device);
+		static TagModbus::MasterBase RTU(IStreamDevice& serial_device);
 
 
 		std::vector<uint16_t> read(uint8_t slave_ID, RegisterType register_type,uint16_t start_address,uint8_t quantity);
 
-		void read(uint8_t slave_ID, const eModbus::RegisterBufferView &outBuffer);
+		void read(uint8_t slave_ID, const TagModbus::RegisterBufferView &outBuffer);
 
 		void write(uint8_t slave_ID, RegisterType register_type, uint16_t start_address, std::span<const uint16_t> values);
 
-		void sendFrame(eModbus::FrameView &send_frame, uint16_t timeout_ms) const;
+		void sendFrame(TagModbus::FrameView &send_frame, uint16_t timeout_ms) const;
 
-		size_t receiveFrame(eModbus::FrameView &receive_frame, uint16_t timeout_ms) const;
+		size_t receiveFrame(TagModbus::FrameView &receive_frame, uint16_t timeout_ms) const;
 
-		void sendReceiveFrame(eModbus::FrameView &send_frame, eModbus::FrameView &receive_frame);
+		void sendReceiveFrame(TagModbus::FrameView &send_frame, TagModbus::FrameView &receive_frame);
 
-		uint32_t getResponseTimeout(eModbus::FrameView send_frame, uint32_t baud) const;
+		uint32_t getResponseTimeout(TagModbus::FrameView send_frame, uint32_t baud) const;
 
 		uint32_t detectBaud(uint8_t slave_ID, std::span<const uint32_t> baudrates);
 
