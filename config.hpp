@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 namespace TagModbus {
-
+    using TagID = uint32_t;
 }

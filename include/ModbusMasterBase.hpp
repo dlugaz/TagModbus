@@ -16,7 +16,7 @@
 
 #include "ModbusRegisterBuffer.hpp"
 #include "ModbusUtils.hpp"
-#include "config.hpp"
+#include "../config.hpp"
 namespace TagModbus {
 	class MasterBase{
 	protected:

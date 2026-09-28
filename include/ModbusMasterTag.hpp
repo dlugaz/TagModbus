@@ -8,7 +8,7 @@
 #include <mutex>
 #include <set>
 #include <variant>
-#include "config.hpp"
+#include "../config.hpp"
 #include "ModbusTag.hpp"
 #include "ModbusTagValue.hpp"
 #include "ModbusMasterBase.hpp"

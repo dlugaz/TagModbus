@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config.hpp"
+#include "../config.hpp"
 #include <string>
 #include <ModbusUtils.hpp>
 
@@ -21,7 +21,8 @@ namespace TagModbus {
 		RegisterType register_type;
 		uint16_t register_number;
 		uint16_t register_length;
-		modbus_parameter_type register_value_type;   // <-- added
+		modbus_parameter_type register_value_type;
+		TagID key;
 	};
 	static_assert(std::is_trivially_copyable_v<Tag>);
 
