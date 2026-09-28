@@ -44,6 +44,9 @@ Add this repository as a submodule in your project
 git submodule add TagModbus https://github.com/dlugaz/TagModbus.git
 git submodule update --init --recursive TagModbus 
 ```
+Add this library to your project CMakeLists.txt
+
+```add_subdirectory(TagModbus)```
 
 ### Examples:
 
