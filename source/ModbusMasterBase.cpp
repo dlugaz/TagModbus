@@ -3,37 +3,37 @@
 //
 #include "ModbusMasterBase.hpp"
 #include "ModbusRegisterBuffer.hpp"
-eModbus::MasterBase::MasterBase(IStreamDevice &serial_device):_streamDevice(serial_device) {
+TagModbus::MasterBase::MasterBase(IStreamDevice &serial_device):_streamDevice(serial_device) {
 }
 
 
-eModbus::MasterBase eModbus::MasterBase::TCP(IStreamDevice &serial_device) {
-    eModbus::MasterBase result(serial_device);
+TagModbus::MasterBase TagModbus::MasterBase::TCP(IStreamDevice &serial_device) {
+    TagModbus::MasterBase result(serial_device);
     result.isTCP = true;
     return result;
 }
 
-eModbus::MasterBase eModbus::MasterBase::RTU(IStreamDevice &serial_device) {
-    eModbus::MasterBase result(serial_device);
+TagModbus::MasterBase TagModbus::MasterBase::RTU(IStreamDevice &serial_device) {
+    TagModbus::MasterBase result(serial_device);
     result.isTCP = false;
     return result;
 }
 
-std::vector<uint16_t> eModbus::MasterBase::read(const uint8_t slave_ID, const RegisterType register_type,
+std::vector<uint16_t> TagModbus::MasterBase::read(const uint8_t slave_ID, const RegisterType register_type,
     const uint16_t start_address, const uint8_t quantity) {
-    eModbus::Frame frame = eModbus::Frame::build(
+    TagModbus::Frame frame = TagModbus::Frame::build(
         true,
         slave_ID,
         getFunctionCode(true,register_type),
         start_address,
         quantity);
-    eModbus::Frame receiveFrame{false};
+    TagModbus::Frame receiveFrame{false};
     sendReceiveFrame(frame,receiveFrame);
 
     return receiveFrame.registersValues();
 }
 
-void eModbus::MasterBase::read(const uint8_t slave_ID, const eModbus::RegisterBufferView &outBuffer) {
+void TagModbus::MasterBase::read(const uint8_t slave_ID, const TagModbus::RegisterBufferView &outBuffer) {
     std::ranges::copy(read(
                             slave_ID,
                             outBuffer.registerType(),
@@ -43,20 +43,20 @@ void eModbus::MasterBase::read(const uint8_t slave_ID, const eModbus::RegisterBu
 }
 
 
-void eModbus::MasterBase::write(const uint8_t slave_ID,const RegisterType register_type,const uint16_t start_address,
+void TagModbus::MasterBase::write(const uint8_t slave_ID,const RegisterType register_type,const uint16_t start_address,
     const std::span<const uint16_t> values) {
-    eModbus::Frame frame = eModbus::Frame::build(
+    TagModbus::Frame frame = TagModbus::Frame::build(
         true,
         slave_ID,
         getFunctionCode(false,register_type),
         start_address,
         values.size(),values);
-    eModbus::Frame receiveFrame{false};
+    TagModbus::Frame receiveFrame{false};
     sendReceiveFrame(frame,receiveFrame);
 
 }
 
-void eModbus::MasterBase::sendFrame(eModbus::FrameView &send_frame, const uint16_t timeout_ms) const {
+void TagModbus::MasterBase::sendFrame(TagModbus::FrameView &send_frame, const uint16_t timeout_ms) const {
 	_streamDevice.flush();
     const SerialError err = _streamDevice.write(
         isTCP ? send_frame.tcpFrame() : send_frame.rtuFrame(), timeout_ms);
@@ -64,7 +64,7 @@ void eModbus::MasterBase::sendFrame(eModbus::FrameView &send_frame, const uint16
         throw StreamDeviceFailure(err);
 }
 
-size_t eModbus::MasterBase::receiveFrame(eModbus::FrameView &receive_frame, const uint16_t timeout_ms) const {
+size_t TagModbus::MasterBase::receiveFrame(TagModbus::FrameView &receive_frame, const uint16_t timeout_ms) const {
     receive_frame.isRequest(false);
 	size_t bytes_read = 0;
 	size_t total_bytes_read = 0;
@@ -84,7 +84,7 @@ size_t eModbus::MasterBase::receiveFrame(eModbus::FrameView &receive_frame, cons
 	return total_bytes_read;
 }
 
-void eModbus::MasterBase::sendReceiveFrame(eModbus::FrameView &send_frame, eModbus::FrameView &receive_frame) {
+void TagModbus::MasterBase::sendReceiveFrame(TagModbus::FrameView &send_frame, TagModbus::FrameView &receive_frame) {
 
     uint16_t slave_ID = send_frame.slaveID();
     uint32_t baud = 0;
@@ -100,26 +100,26 @@ void eModbus::MasterBase::sendReceiveFrame(eModbus::FrameView &send_frame, eModb
     sendFrame(send_frame, send_frame.calculateTransmissionTimeMs(baud) * 2);
     receiveFrame(receive_frame, getResponseTimeout(send_frame, devicesBaudratesMap[slave_ID]));
 
-    eModbus::Frame::ValidationStatus validation = receive_frame.validateRTU();
-    if (validation != eModbus::Frame::ValidationStatus::OK) {
+    TagModbus::Frame::ValidationStatus validation = receive_frame.validateRTU();
+    if (validation != TagModbus::Frame::ValidationStatus::OK) {
     	printf("Receive frame invalid %s",receive_frame.toString().c_str());
     	throw InvalidFrame(validation);
     }
 	validation = receive_frame.validateResponse(send_frame);
-	if (validation != eModbus::Frame::ValidationStatus::OK) {
+	if (validation != TagModbus::Frame::ValidationStatus::OK) {
 		printf("Response Validation failed %s",receive_frame.toString().c_str());
 		throw InvalidFrame(validation);
 	}
 }
 
-uint32_t eModbus::MasterBase::getResponseTimeout(eModbus::FrameView send_frame, const uint32_t baud) const {
+uint32_t TagModbus::MasterBase::getResponseTimeout(TagModbus::FrameView send_frame, const uint32_t baud) const {
     return send_frame.calculateResponseTransmissionTimeMs(baud) + deviceResponseTime_ms;
 }
 
-uint32_t eModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::span<const uint32_t> baudrates) {
+uint32_t TagModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::span<const uint32_t> baudrates) {
 
-    eModbus::Frame send_frame = eModbus::Frame::build(true, slave_ID, eModbus::Frame::FunctionCode::ReadInputRegisters, 0, 1);
-    eModbus::Frame receive_frame(false);
+    TagModbus::Frame send_frame = TagModbus::Frame::build(true, slave_ID, TagModbus::Frame::FunctionCode::ReadInputRegisters, 0, 1);
+    TagModbus::Frame receive_frame(false);
     uint32_t working_baud = 0;
     uint32_t originalBaud = _streamDevice.baudrate();
     if (originalBaud != IStreamDevice::InvalidBaudrate) {
@@ -139,7 +139,7 @@ uint32_t eModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::span
                 break;
             }
 
-            if (receive_frame.validateRTU() == eModbus::Frame::ValidationStatus::OK) {
+            if (receive_frame.validateRTU() == TagModbus::Frame::ValidationStatus::OK) {
                 // Success! We found the working baud rate.
                 working_baud = baud; // Return the working baud and leave it set.
                 break;
@@ -156,7 +156,7 @@ uint32_t eModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::span
             return IStreamDevice::InvalidBaudrate;
         }
 
-        if (receive_frame.validateRTU() == eModbus::Frame::ValidationStatus::OK) {
+        if (receive_frame.validateRTU() == TagModbus::Frame::ValidationStatus::OK) {
             working_baud = baudrates.empty() ? 1 : baudrates[0];
         }
     }
@@ -170,7 +170,7 @@ uint32_t eModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::span
 }
 
 
-std::map<uint8_t, uint32_t> eModbus::MasterBase::scanForDevices(const std::span<const uint32_t> baudrates,const uint16_t timeoutMs) {
+std::map<uint8_t, uint32_t> TagModbus::MasterBase::scanForDevices(const std::span<const uint32_t> baudrates,const uint16_t timeoutMs) {
     constexpr int MODBUS_MIN_ADDRESS = 1;
     constexpr int MODBUS_MAX_ADDRESS = 247;
 
@@ -184,24 +184,24 @@ std::map<uint8_t, uint32_t> eModbus::MasterBase::scanForDevices(const std::span<
     return devicesBaudratesMap;
 }
 
-eModbus::Frame::FunctionCode eModbus::MasterBase::getFunctionCode(const bool isRead, const RegisterType register_type) {
+TagModbus::Frame::FunctionCode TagModbus::MasterBase::getFunctionCode(const bool isRead, const RegisterType register_type) {
     switch(register_type){
         case RegisterType::Coil:
             return isRead?
-                       eModbus::Frame::FunctionCode::ReadCoils
-                       :eModbus::Frame::FunctionCode::WriteMultipleCoils;
+                       TagModbus::Frame::FunctionCode::ReadCoils
+                       :TagModbus::Frame::FunctionCode::WriteMultipleCoils;
         case RegisterType::DiscreteInput:
             return isRead
-                       ?eModbus::Frame::FunctionCode::ReadDiscreteInputs
+                       ?TagModbus::Frame::FunctionCode::ReadDiscreteInputs
                        :throw std::invalid_argument("Unable to write to Discrete Inputs");
         case RegisterType::AnalogInput:
             return isRead?
-                       eModbus::Frame::FunctionCode::ReadInputRegisters
+                       TagModbus::Frame::FunctionCode::ReadInputRegisters
                        :throw std::invalid_argument("Unable to write to Input Registers");;
         case RegisterType::Holding:
             return isRead?
-                       eModbus::Frame::FunctionCode::ReadHoldingRegisters
-                       :eModbus::Frame::FunctionCode::WriteMultipleRegisters;
+                       TagModbus::Frame::FunctionCode::ReadHoldingRegisters
+                       :TagModbus::Frame::FunctionCode::WriteMultipleRegisters;
         default:
             throw std::invalid_argument("Unknown Register Type");
             //				return ModbusFrame::FunctionCode::Invalid;
