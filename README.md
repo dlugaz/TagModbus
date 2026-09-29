@@ -107,7 +107,7 @@ void readFromModbus() {
 
 ### Inspirations
 #### ArduinoJSON https://github.com/bblanchon/ArduinoJson - data type conversion model
-#### Mazurel/ModbusCPP https://github.com/Mazurel/Modbus - 
+#### Mazurel/ModbusCPP https://github.com/Mazurel/Modbus 
 
 
 ### Licence MIT

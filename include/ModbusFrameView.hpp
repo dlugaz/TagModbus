@@ -699,7 +699,9 @@ class FrameView {
                              const uint16_t register_count, const std::span<const uint16_t> registers_values = {},
                              const uint16_t transaction_ID = 0) {
             isRequest(is_request);
-            transactionID(transaction_ID);
+            if (isTCPFrame()) {
+                transactionID(transaction_ID);
+            }
             slaveID(slave_ID);
             functionCode(function_code);
 
@@ -715,7 +717,9 @@ class FrameView {
 
         FrameView &rebuildExceptionResponse(const uint8_t slave_ID, const FunctionCode function_code, const ExceptionCode exception_code,
                                               const uint16_t transaction_ID = 0) {
-            transactionID(transaction_ID);
+            if (isTCPFrame()) {
+                transactionID(transaction_ID);
+            }
             slaveID(slave_ID);
             functionCode(function_code);
             isException(true);

@@ -2,7 +2,7 @@
 #include <array>
 #include "ModbusFrameView.hpp"
 
-using namespace eModbus;
+using namespace TagModbus;
 
 class FrameViewTest : public ::testing::Test {
 protected:

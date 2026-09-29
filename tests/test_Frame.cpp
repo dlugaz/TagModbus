@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "ModbusFrame.hpp"
 
-using namespace eModbus;
+using namespace TagModbus;
 
 class FrameTest : public ::testing::Test {
 protected:

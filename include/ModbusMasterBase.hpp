@@ -61,9 +61,7 @@ namespace TagModbus {
 			_device_error(device_error)
 			{};
 		};
-		class ResponseTimeout:public Exception{
 
-		};
 		static TagModbus::MasterBase TCP(IStreamDevice& serial_device);
 
 		static TagModbus::MasterBase RTU(IStreamDevice& serial_device);
