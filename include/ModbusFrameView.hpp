@@ -709,8 +709,9 @@ class FrameView {
             registerCount(register_count);
             byteCount(register_count * 2); //merge registerCount and bytecount?
             registersValues(registers_values);
-
-            MBAPLength(RTULengthWithoutCRC());
+            if (isTCPFrame()) {
+                MBAPLength(RTULengthWithoutCRC());
+            }
             appendCRC();
             return *this;
         }
@@ -724,8 +725,9 @@ class FrameView {
             functionCode(function_code);
             isException(true);
             exceptionCode(exception_code);
-
-            MBAPLength(RTULengthWithoutCRC());
+            if (isTCPFrame()) {
+                MBAPLength(RTULengthWithoutCRC());
+            }
             appendCRC();
             return *this;
         }

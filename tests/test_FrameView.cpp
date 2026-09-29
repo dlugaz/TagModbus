@@ -114,3 +114,20 @@ TEST_F(FrameViewTest, TransmissionTime) {
     int time = FrameView::calculateTransmissionTimeMs(10, 9600);
     EXPECT_NEAR(time, 10, 1);
 }
+
+TEST_F(FrameViewTest, rebuild) {
+    FrameView viewRTUrequest(buffer, true, false);
+    EXPECT_NO_THROW(viewRTUrequest.rebuild(true,123,FrameView::FunctionCode::ReadHoldingRegisters,213,120));
+
+    FrameView viewTCPrequest(buffer, true, true);
+    EXPECT_NO_THROW(viewTCPrequest.rebuild(true,123,FrameView::FunctionCode::ReadHoldingRegisters,213,120));
+
+    FrameView viewTCP(buffer, true, true);
+    EXPECT_NO_THROW(viewTCP.rebuild(false,123,FrameView::FunctionCode::ReadHoldingRegisters,213,120));
+    FrameView viewRTU(buffer, true, false);
+    EXPECT_NO_THROW(viewRTU.rebuild(false,123,FrameView::FunctionCode::ReadHoldingRegisters,213,120));
+    FrameView viewRTUResponse(buffer, true, false);
+    EXPECT_NO_THROW(viewRTUResponse.rebuildExceptionResponse(124,FrameView::ReadCoils,FrameView::ExceptionCode::IllegalDataAddress));
+    FrameView viewTCPResponse(buffer, true, true);
+    EXPECT_NO_THROW(viewRTUResponse.rebuildExceptionResponse(124,FrameView::ReadCoils,FrameView::ExceptionCode::IllegalDataAddress));
+}
