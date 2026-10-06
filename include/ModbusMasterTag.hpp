@@ -49,31 +49,31 @@ namespace TagModbus {
 		};
 
 		using RequestCache = std::unordered_map<size_t, std::vector<Request> >;
-		RequestCache requestCache_;
+		RequestCache _requestCache;
 
-		void registerTags(const std::vector<Tag> &tagsToRegister) {
+		void registerTags(const std::span<const Tag> tagsToRegister) {
 			// OK, wiec tagi w bazie danych musza byc koniecznie posortowane wedlug typu rejestru i numeru
 			// Chyba ze zrobic osobny vektor/multimape ktory bedzie tak posortowany i bedzie sie odnosil do mapy z tagid
 			// for (const auto &[id, tag] : tagsToRegister) {
 			//     tagsDatabase.insert_or_assign(id, tag);
 			// }
 			clearTags();
-			tagsDatabase = tagsToRegister;
-			std::ranges::sort(tagsDatabase, [](const Tag &a, const Tag &b) {
+			std::ranges::copy(tagsToRegister.begin(),tagsToRegister.end(),_tagsDatabase.end());
+			std::ranges::sort(_tagsDatabase, [](const Tag &a, const Tag &b) {
 				return (a.register_type < b.register_type) ||
 				       (a.register_type == b.register_type && a.register_number < b.register_number);
 			});
 
-			for (size_t i = 0; i < tagsDatabase.size(); ++i) {
+			for (size_t i = 0; i < _tagsDatabase.size(); ++i) {
 				// Use the element's key and its new index 'i'
-				IDtoTagMap.emplace(TagID{tagsDatabase[i].key}, i);
+				_IDtoTagMap.emplace(TagID{_tagsDatabase[i].key}, i);
 			}
 		}
 
 		void clearTags() {
-			IDtoTagMap.clear();
-			tagsDatabase.clear();
-			requestCache_.clear();
+			_IDtoTagMap.clear();
+			_tagsDatabase.clear();
+			_requestCache.clear();
 			// excludedRegisters.clear();
 		}
 
@@ -95,19 +95,19 @@ namespace TagModbus {
 		//     return read(slaveID, std::span(tags));
 		// }
 
-		TagValueMap read(const uint8_t slaveID, std::initializer_list<const TagID> tags) {
-			return read(slaveID, std::span(tags));
+		TagValueMap read(std::initializer_list<const TagID> tags) {
+			return read( std::span(tags));
 		}
-		TagValue read(const uint8_t slaveID, const TagID tagID) {
-			return read(slaveID,{tagID})[tagID];
+		TagValue read(const TagID tagID) {
+			return read({tagID})[tagID];
 		}
 
-		TagValueMap read(const uint8_t slaveID, const std::span<const TagID> tagIDs) {
+		TagValueMap read(const std::span<const TagID> tagIDs) {
 			TagValueMap result;
 			std::vector<Request> requests = prepareReadRequests(tagIDs);
 			for (auto &[registerType, startAddress, quantity,tags]: requests) {
 				try {
-					auto response = MasterBase::read(slaveID, registerType, startAddress,
+					auto response = MasterBase::read(_slaveID, registerType, startAddress,
 					                                 quantity);
 					RegisterBufferView parser{startAddress, registerType, response};
 					//associate TagID with value
@@ -138,13 +138,13 @@ namespace TagModbus {
 		//
 		//     //return map
 		// }
-		[[nodiscard]] WriteErrors write(const uint8_t slaveID,const TagValueMap& values, bool oneByOne = true) {
+		[[nodiscard]] WriteErrors write(const TagValueMap& values, bool oneByOne = true) {
 			WriteErrors writeErrors;
 			if (oneByOne) {
 				for (auto &[tagID,value]: values) {
 					const auto &info = getTag(tagID);
 					try {
-						MasterBase::write(slaveID, info.register_type, info.register_number, value.data());
+						MasterBase::write(_slaveID, info.register_type, info.register_number, value.data());
 					}catch (const ModbusException& modbus_exception) {
 						writeErrors.push_back({tagID, modbus_exception});
 					}
@@ -167,15 +167,25 @@ namespace TagModbus {
 			return result;
 		}
 
+		[[nodiscard]] uint8_t slaveID() const {
+			return _slaveID;
+		}
+
+		void slaveID(uint8_t slave_id) {
+			_slaveID = slave_id;
+		}
+
 	private:
 		//Potrzebuje, zeby tagsDatabase bylo jednoczesnie szybkie do znalezienia przez TagID, oraz przez registerNumber
 		// i RegisterType. Najlepiej jeśli jeszcze byłoby posortowane według registerNumber i RegisterType
 
-		std::vector<Tag> tagsDatabase;
-		TagMap IDtoTagMap;
-		std::set<TagID> excludedTags; //moze powinno to byc excludedregisters?
-		std::array<std::set<uint16_t>, 4> excludedRegisters;
-		bool excludedTagsChanged;
+		std::vector<Tag> _tagsDatabase;
+		TagMap _IDtoTagMap;
+		std::set<TagID> _excludedTags; //moze powinno to byc excludedregisters?
+		std::array<std::set<uint16_t>, 4> _excludedRegisters;
+		uint8_t _slaveID;
+
+		bool excludedTagsChanged = false;
 
 		size_t calculateTagHash(const std::span<const TagID> tags) const {
 			size_t seed = 0;
@@ -188,8 +198,8 @@ namespace TagModbus {
 
 		void sortTags(std::vector<TagID> &tags) {
 			std::ranges::sort(tags, [this](const TagID &a_id, const TagID &b_id) {
-				const bool a_found = IDtoTagMap.contains(a_id);
-				const bool b_found = IDtoTagMap.contains(b_id);
+				const bool a_found = _IDtoTagMap.contains(a_id);
+				const bool b_found = _IDtoTagMap.contains(b_id);
 
 				// If neither tag is found, treat them as equivalent
 				if (!a_found && !b_found) return false;
@@ -208,22 +218,22 @@ namespace TagModbus {
 		bool checkRegistersContinuity(const TagID &first_tag_id, const TagID &end_tag_id) noexcept {
 			if (first_tag_id == end_tag_id)
 				return true;
-			const auto itStart = IDtoTagMap.find(first_tag_id);
-			const auto itEnd = IDtoTagMap.find(end_tag_id);
+			const auto itStart = _IDtoTagMap.find(first_tag_id);
+			const auto itEnd = _IDtoTagMap.find(end_tag_id);
 
-			if (itStart == IDtoTagMap.end() || itEnd == IDtoTagMap.end()) return false;
+			if (itStart == _IDtoTagMap.end() || itEnd == _IDtoTagMap.end()) return false;
 			size_t startIndex = itStart->second;
 			size_t endIndex = itEnd->second;
 			if (startIndex > endIndex) std::swap(startIndex, endIndex);
-			const Tag &firstTag = tagsDatabase[startIndex];
-			const Tag &lastTag = tagsDatabase[endIndex];
+			const Tag &firstTag = _tagsDatabase[startIndex];
+			const Tag &lastTag = _tagsDatabase[endIndex];
 
 			// 3. Different register types can never be "continuous" in one request
 			if (firstTag.register_type != lastTag.register_type) return false;
 			uint16_t currentReach = firstTag.register_number + firstTag.register_length;
 
 			for (size_t i = startIndex + 1; i <= endIndex; ++i) {
-				const Tag &currentTag = tagsDatabase[i];
+				const Tag &currentTag = _tagsDatabase[i];
 
 				// Gap detected: current tag starts after the previous reach
 				if (currentTag.register_number > currentReach) {
@@ -243,15 +253,15 @@ namespace TagModbus {
 
 		std::vector<Request>* findRequestInCache(const std::span<const TagID> sortedTags) {
 			const size_t tagHash = calculateTagHash(sortedTags);
-			const auto it = requestCache_.find(tagHash);
-			if (it != requestCache_.end()) {
+			const auto it = _requestCache.find(tagHash);
+			if (it != _requestCache.end()) {
 				return &it->second;
 			}
 			return nullptr;
 		}
 		void addRequestsToCache(const std::span<const TagID> sortedTags,const std::vector<Request> &requests) {
 			const size_t tagHash = calculateTagHash(sortedTags);
-			requestCache_.insert({tagHash,requests});
+			_requestCache.insert({tagHash,requests});
 		}
 		std::vector<Request> prepareReadRequests(std::initializer_list<const TagID> tags) {
 			return prepareReadRequests(std::span(tags));
@@ -270,19 +280,22 @@ namespace TagModbus {
 
 			TagID previousTagID{};
 			for (const TagID &currentTagID: sortedTags) {
-				if (!IDtoTagMap.contains(currentTagID))
+				if (!_IDtoTagMap.contains(currentTagID))
 					continue;
-				if (excludedTags.contains(currentTagID))
+				if (_excludedTags.contains(currentTagID))
 					continue;
 
 				const Tag &currentTag = getTag(currentTagID);
 
-				if (requests.empty())
+				if (requests.empty()) {
 					requests.push_back({
 						.registerType = currentTag.register_type,
 						.startAddress = currentTag.register_number,
 						.quantity = currentTag.register_length,
+						.tagIDs = {currentTagID}
 					});
+					continue;
+				}
 
 				Request &currentRequest = requests.back();
 
@@ -306,9 +319,10 @@ namespace TagModbus {
 					requests.push_back({
 						.registerType = currentTag.register_type,
 						.startAddress = currentTag.register_number,
-						.quantity = currentTag.register_length
+						.quantity = currentTag.register_length,
+						.tagIDs = {currentTagID}
 					});
-					requests.back().tagIDs.push_back(currentTagID);
+					// requests.back().tagIDs.push_back(currentTagID);
 				}
 			}
 
@@ -321,7 +335,7 @@ namespace TagModbus {
 			if (firstRegisterNumber > lastRegisterNumber)
 				std::swap(firstRegisterNumber, lastRegisterNumber);
 			bool excludedRegistersFound = false;
-			for (const auto excludedRegisterNumber: excludedRegisters[static_cast<int>(registerType)]) {
+			for (const auto excludedRegisterNumber: _excludedRegisters[static_cast<int>(registerType)]) {
 				if (excludedRegisterNumber >= firstRegisterNumber && excludedRegisterNumber <= lastRegisterNumber) {
 					excludedRegistersFound = true;
 					break;
@@ -332,7 +346,7 @@ namespace TagModbus {
 
 	protected:
 		Tag &getTag(const TagID &tagID) {
-			return tagsDatabase[IDtoTagMap.at(tagID)];
+			return _tagsDatabase[_IDtoTagMap.at(tagID)];
 		}
 	};
 }

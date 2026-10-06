@@ -86,13 +86,15 @@ size_t TagModbus::MasterBase::receiveFrame(TagModbus::FrameView &receive_frame, 
 
 void TagModbus::MasterBase::sendReceiveFrame(TagModbus::FrameView &send_frame, TagModbus::FrameView &receive_frame) {
 
-    uint16_t slave_ID = send_frame.slaveID();
+    const uint16_t slave_ID = send_frame.slaveID();
     uint32_t baud = 0;
 
     if (!devicesBaudratesMap.contains(slave_ID)) {
-        baud = detectBaud(slave_ID, defaultBaudrates);
-        if (baud == 0)
+        const auto detectBaudResult = detectBaud(slave_ID, defaultBaudrates);
+        if (!detectBaudResult) {
             throw StreamDeviceFailure(SerialError::TIMEOUT);;
+        }
+        baud = detectBaudResult.value();
     } else {
         baud = devicesBaudratesMap[slave_ID];
     }
@@ -114,7 +116,7 @@ uint32_t TagModbus::MasterBase::getResponseTimeout(TagModbus::FrameView send_fra
     return send_frame.calculateResponseTransmissionTimeMs(baud) + deviceResponseTime_ms;
 }
 
-uint32_t TagModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::span<const uint32_t> baudrates) {
+std::optional<uint32_t> TagModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::span<const uint32_t> baudrates) {
 
     TagModbus::Frame send_frame = TagModbus::Frame::build(true, slave_ID, TagModbus::Frame::FunctionCode::ReadInputRegisters, 0, 1);
     TagModbus::Frame receive_frame(false);
@@ -147,11 +149,11 @@ uint32_t TagModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::sp
     }else {
         originalBaud = 9600;
         if (_streamDevice.write(send_frame.rtuFrame(), send_frame.calculateTransmissionTimeMs(originalBaud)*2) != SerialError::SUCCESS) {
-            return IStreamDevice::InvalidBaudrate;
+            return {};
         }
 
         if (_streamDevice.read(receive_frame.rtuBuffer(), getResponseTimeout(send_frame, originalBaud)) != SerialError::SUCCESS) {
-            return IStreamDevice::InvalidBaudrate;
+            return {};
         }
 
         if (receive_frame.validateRTU() == TagModbus::Frame::ValidationStatus::OK) {
@@ -160,22 +162,24 @@ uint32_t TagModbus::MasterBase::detectBaud(const uint8_t slave_ID, const std::sp
     }
     if (working_baud) {
         devicesBaudratesMap.emplace(slave_ID,working_baud);
-    }else {
-        devicesBaudratesMap.erase(slave_ID);
+        return working_baud;
     }
-
-    return working_baud;
+    devicesBaudratesMap.erase(slave_ID);
+    return {};
 }
 
 
-std::map<uint8_t, uint32_t> TagModbus::MasterBase::scanForDevices(const std::span<const uint32_t> baudrates,const uint16_t timeoutMs) {
+std::map<uint8_t, uint32_t> TagModbus::MasterBase::scanForDevices(const std::span<const uint32_t> baudrates,const bool findFirst, const uint16_t timeoutMs) {
     constexpr int MODBUS_MIN_ADDRESS = 1;
     constexpr int MODBUS_MAX_ADDRESS = 247;
 
     for (int slave_id = MODBUS_MIN_ADDRESS; slave_id <= MODBUS_MAX_ADDRESS; ++slave_id) {
-        int baud = detectBaud(slave_id, baudrates);
-        if (baud != 0) {
-            devicesBaudratesMap[slave_id] = baud;
+        auto baud = detectBaud(slave_id, baudrates);
+        if (baud) {
+            devicesBaudratesMap[slave_id] = baud.value();
+            if (findFirst) {
+                break;
+            }
         }
     }
 

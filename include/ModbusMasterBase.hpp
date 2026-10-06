@@ -81,9 +81,9 @@ namespace TagModbus {
 
 		uint32_t getResponseTimeout(TagModbus::FrameView send_frame, uint32_t baud) const;
 
-		uint32_t detectBaud(uint8_t slave_ID, std::span<const uint32_t> baudrates);
+		std::optional<uint32_t> detectBaud(uint8_t slave_ID, std::span<const uint32_t> baudrates);
 
-		std::map<uint8_t, uint32_t> scanForDevices(std::span<const uint32_t> baudrates, uint16_t timeoutMs = 10);
+		std::map<uint8_t, uint32_t> scanForDevices(std::span<const uint32_t> baudrates, bool findFirst = false,uint16_t timeoutMs = 10);
 
 		static FrameView::FunctionCode getFunctionCode(bool isRead,RegisterType register_type);
 
